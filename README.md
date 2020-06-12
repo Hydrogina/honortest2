@@ -1,37 +1,382 @@
-## Welcome to GitHub Pages
+<div style="width:1280px">
+	<canvas id="item_canvas" width="1280" height="720">
+	</canvas>
+</div>
+<script>
+	"use strict";
 
-You can use the [editor on GitHub](https://github.com/Hydrogina/honortest2/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+        var num_all=28;
+        var size_all = new Array(num_all);
+        var x_all = new Array(num_all);
+        var y_all = new Array(num_all);
+        var inbox_all = new Array(num_all);
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+        (function honor(items) {
+            var data = { "items": [] };
+            var canvas = document.getElementById("item_canvas");
+            var context = canvas.getContext('2d');
+            var focus = -1;
+            var needupdate;
+            var mousex, mousey;
+            var scale = 31.25;
 
-### Markdown
+            //console.log(Array.isArray(data));
+             
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+            canvas.addEventListener("mousedown", pickitem);
+            canvas.addEventListener("touchstart",
+                function (ev) {
+                    if (ev.touches.length == 1) {
+                        pickitem(ev.touches[0]);
+                    }
+                }
+            );
+            canvas.addEventListener("mousemove", moveitem);
+            canvas.addEventListener("touchmove",
+                function (ev) {
+                    if (ev.touches.length == 1&&focus>=0) {
+                        ev.preventDefault();
+                        moveitem(ev.touches[0]);
+                    }
+                }
+            );
+            canvas.addEventListener("mouseup", setitem);
+            canvas.addEventListener("mouseleave", setitem);
+            canvas.addEventListener("touchend",
+                function (ev) {
+                    if (ev.touches.length == 0) {
+                        setitem(null);
+                    }
+                }
+            );
+            loaditems();
+            draw();
+            setsaveandload();
 
-```markdown
-Syntax highlighted code block
+            function otoh(x, y) {
+                return { "x": Math.sqrt(4 / 3) * x / scale, "y": (y + Math.sqrt(1 / 3) * x) / scale };
+            }
+            function htoo(x, y) {
+                return { "x": Math.sqrt(3 / 4) * x * scale, "y": (y - 0.5 * x) * scale };
+            }
+            function nearest(x, y) {
+                var xay = Math.floor(x + y);
+                var ix = Math.floor((x - 0.5 * y + 0.5 * xay + 1.0) / 1.5);
+                var iy = Math.floor((y - 0.5 * x + 0.5 * xay + 1.0) / 1.5);
+                return { "x": ix, "y": iy };
+            }
+            function additem(name, id) {
+                //console.log("additem",id);
+                var x = id + 11, y = Math.floor(id / 2) + 26 + 2 * (id % 2);//h
 
-# Header 1
-## Header 2
-### Header 3
+                x_all[id]=x;
+                y_all[id]=y;
 
-- Bulleted
-- List
+                var ax, ay;
+                var img = new Image();
+                var drawline = 0;
+                var inbox = 1;
 
-1. Numbered
-2. List
+                inbox_all[id]=inbox;
 
-**Bold** and _Italic_ and `Code` text
+                var r;
+                img.src = name;
+                img.onload = function () {
+                    r = Math.floor(img.height / scale / 2 + 0.5);
+                    size_all[id]=r;
+                    needupdate = 1;
+                    data.items.push(
+                        {
+                            "predraw": predraw,
+                            "draw": draw,
+                            "pick": pick,
+                            "move": move,
+                            "set": set,
+                            "checkfocus": checkfocus
+                        }
+                    );
+                };
+                function checkvalid(x, y) {
 
-[Link](url) and ![Image](src)
-```
+                    
+                    var rb = (inbox ? 1 : r);
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+                    //console.log(rb);
+                    //console.log(focus);
+                    //console.log("checkvalid",focus,x,y,inbox,r);
+                    
 
-### Jekyll Themes
+                    if (x > 0.5 && x < 46.5 && y - 0.5 * x > 0.25 && y - 0.5 * x < 22.75) {
+                        
+                        var rtn=0;
+                        var inbox1=0;
+                        
+                        if (y - 0.5 * x < 19.75) {
+                            rtn= 1;
+                            inbox1=0;
+                        }
+                        else {
+                            rtn= -1;
+                            inbox1=1;
+                        }
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Hydrogina/honortest2/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+                        //var x1=htoo(x, y).x;
+                        //var y1=htoo(x, y).y;
+                        var id =focus;
+                        var x1=x;
+                        var y1=y;
+                        var z1=x1-y1;
+                        size_all[focus]=r;
+                        var r1=(inbox1 ? 1 : r);
 
-### Support or Contact
+                        //num_all
+                        for(var i=0;i<num_all;i++)
+                        {
+                            if(i!=id)
+                            {
+                                var x2=x_all[i];
+                                var y2=y_all[i];
+                                var z2=x2-y2;
+                                //var x2=htoo(x_all[i], y_all[i]).x;
+                                //var y2=htoo(x_all[i], y_all[i]).y;
+                                var xdiff=Math.abs(x2-x1);
+                                var ydiff=Math.abs(y2-y1);
+                                var zdiff=Math.abs(z2-z1);
+                                //var dis=Math.pow((xdiff * xdiff + ydiff * ydiff), 0.5);
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+                                var r2=(inbox_all[i] ? 1 : size_all[i]);
+
+                                //var r_diss=(r2+r1-1.1)*scale;
+                                //var r_diss=(r2+r1)*scale;
+                                var r_diss=r2+r1;
+
+                                //console.log(xdiff,ydiff);
+                                //console.log(xdiff,ydiff,zdiff);
+                                //console.log(r1,r2);
+                                if(xdiff<r_diss&&ydiff<r_diss&&zdiff<r_diss)//xdiff<r_diss*0.86603&&ydiff<-xdiff*0.57735+r_diss)
+                                {
+                                    //console.log(xdiff,ydiff,zdiff,r_diss,r2,r1);
+                                    //console.log(size_all[i],size_all[id]);
+                                    //console.log(i,id);
+                                    return 0;
+                                }
+
+                            }
+                            //console.log("  ",i,x_all[i],y_all[i],inbox_all[i],size_all[i]);
+                        }
+                        //console.log("xy",htoo(x, y).x,htoo(x, y).y);
+
+                        return rtn;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+                function checkfocus(mx, my) {
+                    var rb = (inbox ? 1 : r);
+                    var dx = otoh(mx,my).x - x;
+                    var dy = otoh(mx, my).y - y;
+                    return dx < rb && dx > -rb && dy < rb && dy > -rb && dx - dy < rb && dx - dy > -rb;
+                }
+                function pick() {
+                    ax = x;
+                    ay = y;
+                    drawline = 1;
+                    needupdate = 1;
+                }
+                function move(dx, dy) {
+                    x = x + otoh(dx, dy).x;
+                    y = y + otoh(dx, dy).y;
+                    var temp = nearest(x, y);
+                    switch (checkvalid(temp.x, temp.y)) {
+                        case 1:
+                            ax = temp.x;
+                            ay = temp.y;
+                            inbox = 0;
+                            break;
+                        case -1:
+                            ax = temp.x;
+                            ay = temp.y;
+                            inbox = 1;
+                            break;
+                    }
+                    needupdate = 1;
+                }
+                function set() {
+                    x = ax;
+                    y = ay;
+                    needupdate = 1;
+                    drawline = 0;
+
+                    x_all[focus] = x;
+                    y_all[focus] = y;
+                    inbox_all[focus] = inbox;
+
+                    
+                    //console.log("set",x,y,inbox,focus);
+                }
+                function predraw() {
+                    var rb = (inbox ? 1 : r) - 0.2;
+                    context.fillStyle = "#444444";
+                    context.beginPath();
+                    context.moveTo(htoo(x - rb, y - rb).x, htoo(x - rb, y - rb).y);
+                    context.lineTo(htoo(x - rb, y).x, htoo(x - rb, y).y);
+                    context.lineTo(htoo(x, y + rb).x, htoo(x, y + rb).y);
+                    context.lineTo(htoo(x + rb, y + rb).x, htoo(x + rb, y + rb).y);
+                    context.lineTo(htoo(x + rb, y).x, htoo(x + rb, y).y);
+                    context.lineTo(htoo(x, y - rb).x, htoo(x, y - rb).y);
+                    context.closePath();
+                    context.fill();
+                }
+                function draw() {
+                    if (drawline) {
+                        var rb = (inbox ? 1 : r) - 0.1;
+                        //console.log(rb);
+                        context.strokeStyle = "#8080f0";
+                        context.lineWidth = 2;
+                        context.beginPath();
+                        context.moveTo(htoo(ax - rb, ay - rb).x, htoo(ax - rb, ay - rb).y);
+                        context.lineTo(htoo(ax - rb, ay).x, htoo(ax - rb, ay).y);
+                        context.lineTo(htoo(ax, ay + rb).x, htoo(ax, ay + rb).y);
+                        context.lineTo(htoo(ax + rb, ay + rb).x, htoo(ax + rb, ay + rb).y);
+                        context.lineTo(htoo(ax + rb, ay).x, htoo(ax + rb, ay).y);
+                        context.lineTo(htoo(ax, ay - rb).x, htoo(ax, ay - rb).y);
+                        context.closePath();
+                        context.stroke();
+                    }
+                    if (inbox) {
+                        context.drawImage(img, htoo(x, y).x - img.width / 2 / r, htoo(x, y).y - img.height / 2 / r, img.width / r, img.height / r);
+                    }
+                    else {
+                        context.drawImage(img, htoo(x, y).x - img.width / 2, htoo(x, y).y - img.height / 2);
+                    }
+                }
+            }
+
+            
+            function choosefocus(x, y) {
+                for (var i = 0; i < data.items.length; i++) {
+                    if (data.items[i].checkfocus(x, y)) {
+                        focus = i;
+                    }
+                }
+            }
+
+            function getlayerpos(ev) {
+                if (!ev.layerX) {
+                    ev.layerX = ev.pageX;
+                    ev.layerY = ev.pageY;
+                    var t = ev.target;
+                    while (t.offsetParent) {
+                        ev.layerX -= t.offsetLeft;
+                        ev.layerY -= t.offsetTop;
+                        t = t.offsetParent;
+                    }
+                }
+            }
+
+            function pickitem(ev) {
+                getlayerpos(ev);
+                choosefocus(ev.layerX, ev.layerY);
+                if (focus >= 0) {
+                    data.items[focus].pick();
+                }
+                mousex = ev.layerX;
+                mousey = ev.layerY;
+            }
+
+            function moveitem(ev) {
+                getlayerpos(ev);
+                if (focus >= 0) {
+                    data.items[focus].move(ev.layerX - mousex, ev.layerY - mousey);
+                    //console.log(5);
+                }
+                mousex = ev.layerX;
+                mousey = ev.layerY;
+            }
+
+            function setitem(ev) {
+                if (focus >= 0) {
+                    data.items[focus].set();
+                }
+                focus = -1;
+
+                //console.log("setitem",x,y);
+            }
+
+            function draw() {
+                if (needupdate) {
+                    needupdate = 0;
+                    context.clearRect(0, 0, canvas.width, canvas.height); 
+                    context.fillStyle = "#ffffff";
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    context.strokeStyle = "#eeeeee";
+                    context.lineWidth = 3;
+                    for (var i = 0; i < 50; i++) {
+                        context.beginPath();
+                        context.moveTo(htoo(0, i).x, htoo(0, i).y);
+                        context.lineTo(htoo(50, i).x, htoo(50, i).y);
+                        context.stroke();
+                        context.beginPath();
+                        context.moveTo(htoo(i, 0).x, htoo(i, 0).y);
+                        context.lineTo(htoo(i, 50).x, htoo(i, 50).y);
+                        context.stroke();
+                        context.beginPath();
+                        context.moveTo(htoo(0, -25 + i).x, htoo(0, -25 + i).y);
+                        context.lineTo(htoo(50, 25 + i).x, htoo(50, 25 + i).y);
+                        context.stroke();
+                    }
+                    for (var i = 0; i < data.items.length; i++) {
+                        data.items[i].predraw();
+                        data.items[i].draw();
+                    }
+                }
+                window.requestAnimationFrame(draw);
+            }
+            function loaditems() {
+                for (var i = 0; i < items.length; i++) {
+                    additem(items[i], i);
+                }
+            }
+            function setsaveandload() {
+                function load() {
+
+                }
+                function save() {
+
+                }
+                //document.getElementById("item_save").onclick = save;
+                //document.getElementById("item_load").onclick = load;
+            }
+        })([
+            "http://ak.mooncell.wiki/images/2/23/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%8D%83%E9%94%A4%E7%99%BE%E7%82%BC%E5%A5%96%E7%AB%A0%C2%B7I.png",
+            "http://ak.mooncell.wiki/images/7/77/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%8D%83%E9%94%A4%E7%99%BE%E7%82%BC%E5%A5%96%E7%AB%A0%C2%B7II.png",
+            "http://ak.mooncell.wiki/images/6/6f/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%8D%83%E9%94%A4%E7%99%BE%E7%82%BC%E5%A5%96%E7%AB%A0%C2%B7III.png",
+            "http://ak.mooncell.wiki/images/d/d4/%E8%9A%80%E5%88%BB%E7%AB%A0_%E2%80%9C%E7%99%BE%E6%97%A5%E7%9A%84%E6%80%9D%E7%B4%A2%E4%B8%8E%E5%86%B3%E7%AD%96%E2%80%9D.png",
+            "http://ak.mooncell.wiki/images/2/29/%E8%9A%80%E5%88%BB%E7%AB%A0_%E2%80%9C%E4%B8%80%E5%B9%B4%E7%9A%84%E9%8F%96%E6%88%98%E4%B8%8E%E5%AE%88%E6%9C%9B%E2%80%9D.png",
+            "http://ak.mooncell.wiki/images/8/86/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%B9%B2%E5%91%98%E8%81%94%E7%BB%9C%E5%A5%96%E7%AB%A0%C2%B7I.png",
+            "http://ak.mooncell.wiki/images/f/fa/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%B9%B2%E5%91%98%E8%81%94%E7%BB%9C%E5%A5%96%E7%AB%A0%C2%B7II.png",
+            "http://ak.mooncell.wiki/images/9/97/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%B9%B2%E5%91%98%E8%81%94%E7%BB%9C%E5%A5%96%E7%AB%A0%C2%B7III.png",
+            "http://ak.mooncell.wiki/images/b/bb/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%B9%B2%E5%91%98%E8%81%94%E7%BB%9C%E5%A5%96%E7%AB%A0%C2%B7IV.png",
+            "http://ak.mooncell.wiki/images/8/8c/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%85%AC%E5%BC%80%E6%8B%9B%E5%8B%9F%E5%A5%96%E7%AB%A0%C2%B7I.png",
+            "http://ak.mooncell.wiki/images/2/25/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%85%AC%E5%BC%80%E6%8B%9B%E5%8B%9F%E5%A5%96%E7%AB%A0%C2%B7II.png",
+            "http://ak.mooncell.wiki/images/c/c9/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%85%AC%E5%BC%80%E6%8B%9B%E5%8B%9F%E5%A5%96%E7%AB%A0%C2%B7III.png",
+            "http://ak.mooncell.wiki/images/a/aa/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%85%AC%E5%BC%80%E6%8B%9B%E5%8B%9F%E5%A5%96%E7%AB%A0%C2%B7IV.png",
+            "http://ak.mooncell.wiki/images/a/a8/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%85%AC%E5%BC%80%E6%8B%9B%E5%8B%9F%E5%A5%96%E7%AB%A0%C2%B7V.png",
+            "http://ak.mooncell.wiki/images/7/79/%E8%9A%80%E5%88%BB%E7%AB%A0_%E6%83%85%E6%8A%A5%E5%BD%92%E6%A1%A3%E7%A1%AE%E8%AE%A4%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/6/6e/%E8%9A%80%E5%88%BB%E7%AB%A0_%E5%B9%B4%E7%9A%84%E5%8D%B0%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/2/25/%E8%9A%80%E5%88%BB%E7%AB%A0_%E4%B8%8B%E5%8D%88%E8%8C%B6%E9%9B%86%E6%8D%A2%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/a/a9/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E9%87%8D%E9%93%B8%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/1/10/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E5%90%88%E7%BA%A6%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/e/e4/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E5%90%88%E7%BA%A6%E5%A5%96%E7%AB%A0%C2%B7II.png",
+            "http://ak.mooncell.wiki/images/6/61/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E5%90%88%E7%BA%A6%E5%A5%96%E7%AB%A0%C2%B7II_%E9%95%80%E5%B1%82.png",
+            "http://ak.mooncell.wiki/images/f/f7/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E6%88%98%E6%9C%8D%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/b/bb/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E9%98%B5%E5%9C%B0%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/6/66/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E5%93%8D%E5%BA%94%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/5/54/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E5%93%8D%E5%BA%94%E5%A5%96%E7%AB%A0%C2%B7II.png",
+            "http://ak.mooncell.wiki/images/a/af/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E8%B7%8B%E6%B6%89%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/0/00/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E6%BC%94%E4%B9%A0%E5%A5%96%E7%AB%A0.png",
+            "http://ak.mooncell.wiki/images/e/e3/%E8%9A%80%E5%88%BB%E7%AB%A0_%E9%BB%84%E9%93%81%E5%90%88%E4%BD%9C%E5%A5%96%E7%AB%A0.png"
+        ]);
+
+</script>
